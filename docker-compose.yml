@@ -6,12 +6,22 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
-  app:
+  api:
     build: .
     ports:
       - "3000:3000"
     environment:
       MONGO_URI: mongodb://db:27017/unicon
+    depends_on:
+      - db
+  admin:
+    build: ../unicon-admin
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    environment:
+      NODE_ENV: development
     depends_on:
       - db
 volumes:
