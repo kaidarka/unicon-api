@@ -16,13 +16,10 @@ services:
       - db
   admin:
     build: ../unicon-admin
+    environment:
+      - NODE_ENV=production
+    command: npm start
     ports:
       - "5000:5000"
-    volumes:
-      - .:/app
-    environment:
-      NODE_ENV: development
-    depends_on:
-      - db
 volumes:
   mongo-data:
