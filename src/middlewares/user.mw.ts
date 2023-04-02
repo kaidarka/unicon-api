@@ -15,7 +15,7 @@ export function generateToken(userId: string, email: string): string {
     });
 }
 // TODO переделать методы с токенами как в другом проекте
-export function authenticate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+export function checkAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {

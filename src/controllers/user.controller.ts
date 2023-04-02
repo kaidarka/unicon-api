@@ -1,66 +1,27 @@
 import { Request, Response } from 'express';
-import {User} from '../models/user.model';
-import {generateToken} from "../middlewares/user.mw";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import {User as UserModel} from '../models/user.model';
+import UserService from "../services/user.service";
 
-export const registration = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-        return res.status(400).send('Please provide a username and password');
-    }
+interface AuthenticatedRequest extends Request {
+    userId: string;
+}
 
-    // Check if the user already exists in the database
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-        return res.status(400).send('Email already taken');
-    }
-
-    // Hash the password using bcrypt
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create a new user in the database
-    const newUser = new User({
-        email,
-        password: hashedPassword
-    });
-    await newUser.save();
-
-    // Create a JWT token for the new user
-    const token = jwt.sign({ _id: newUser._id }, process.env.JWT_SECRET || "secret");
-
-    res.send(token);
-};
-
-export const findAll = async (req: Request, res: Response) => {
+export const register = async (req: Request, res: Response) => {
     try {
-        const users = await User.find();
-        res.json(users);
+        const userData = await UserService.registration(req);
+        res.cookie("refreshToken", userData.refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true});
+        return res.json(userData);
     } catch (err) {
-        console.error(err);
-        res.status(500).send(err);
-    }
-};
-
-export const findOne = async (req: Request, res: Response) => {
-    try {
-        const user = await User.findById(req.params.userId);
-        if (!user) {
-            res.status(404).send('User not found.');
-        } else {
-            res.json(user);
-        }
-    } catch (err) {
-        console.error(err);
-        res.status(500).send(err);
+        res.status(500).json({
+            message: "Не удалось зарегистрироваться",
+        });
     }
 };
 
 export const update = async (req: Request, res: Response) => {
     try {
         const user = await
-            User.findByIdAndUpdate(req.params.userId, req.body, {
+            UserModel.findByIdAndUpdate(req.params.userId, req.body, {
                 new: true,
                 useFindAndModify: false
             });
@@ -77,7 +38,7 @@ export const update = async (req: Request, res: Response) => {
 
 export const remove = async (req: Request, res: Response) => {
     try {
-        const user = await User.findByIdAndRemove(req.params.userId, {
+        const user = await UserModel.findByIdAndRemove(req.params.userId, {
             useFindAndModify: false
         });
         if (!user) {
@@ -92,14 +53,64 @@ export const remove = async (req: Request, res: Response) => {
 };
 
 export const login = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-
-    if (!user || !user.checkPassword(password)) {
-        res.status(401).send('Invalid email or password');
-    } else {
-        const token = generateToken(user.id, user.email);
-        res.json({ token });
+    try {
+        const { email, password } = req.body;
+        const userData = await UserService.login(email, password);
+        res.cookie("refreshToken", userData.refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true});
+        return res.json(userData);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            message: "Не удалось авторизоваться",
+        });
     }
-}
+};
 
+export const getMe = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const user = await UserModel.findById(req.userId);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "Пользователь не найден",
+            });
+        }
+
+        const userData = (user as any)._doc;
+
+        res.json(userData);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            message: "Нет доступа",
+        });
+    }
+};
+
+export const refresh = async (req: Request, res: Response) => {
+    try {
+        const {refreshToken} = req.cookies;
+        const userData = await UserService.refresh(refreshToken);
+
+        if (userData instanceof Error) {
+            throw new Error('Ошибка авторизации')
+        }
+
+        res.cookie("refreshToken", userData.refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true});
+
+        return res.json(userData);
+    } catch (err) {
+        console.log(err);
+    }
+};
+
+export const logout = async (req: Request, res: Response) => {
+    try {
+        const { refreshToken } = req.cookies;
+        const token = UserService.logout(refreshToken);
+        res.clearCookie("refreshToken");
+        return res.json(token);
+    } catch (err) {
+        console.log(err);
+    }
+};
