@@ -27,7 +27,9 @@ services:
       - db
 
   admin:
-    build: ../unicon-admin
+    build:
+      context: ../unicon-admin
+      dockerfile: Dockerfile.dev
     environment:
       - NODE_ENV=production
     command: npm start
