@@ -53,6 +53,7 @@ services:
     restart: unless-stopped
     volumes:
       - ../unicon-front:/app:delegated # Mount current directory to /app in the container
+      - /app/node_modules
     ports:
       - "3000:3000"
 
