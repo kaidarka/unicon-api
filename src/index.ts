@@ -8,7 +8,7 @@ import userRoutes from './routes/user.routes';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/unicon";
 mongoose.connect(MONGO_URI, {
@@ -23,7 +23,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 app.get('/', (req, res) => {
-    res.send('Hello!');
+    res.send('Hello! jopa');
 });
 app.use('/api/users', userRoutes);
 

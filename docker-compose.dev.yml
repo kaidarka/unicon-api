@@ -13,10 +13,10 @@ services:
     container_name: api
     restart: unless-stopped
     volumes:
-      - .:/app # Mount current directory to /app in the container
+      - .:/app:delegated # Mount current directory to /app in the container
       - /app/node_modules # Mount the node_modules directory as a volume to avoid installation in the container
     ports:
-      - "3000:3000"
+      - "4000:4000"
     environment:
       - NODE_ENV=development # Set environment variable for development
       - PORT=3000 # Set environment variable for port
@@ -31,15 +31,30 @@ services:
       context: ../unicon-admin
       dockerfile: Dockerfile.dev
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
     command: npm start
     container_name: admin
     restart: unless-stopped
     volumes:
-      - ../unicon-admin:/app # Mount current directory to /app in the container
+      - ../unicon-admin:/app:delegated # Mount current directory to /app in the container
       - /app/node_modules # Mount the node_modules directory as a volume to avoid installation in the container
     ports:
       - "5000:5000"
+
+
+  front:
+    build:
+      context: ../unicon-front
+      dockerfile: Dockerfile.dev
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+    container_name: front
+    restart: unless-stopped
+    volumes:
+      - ../unicon-front:/app:delegated # Mount current directory to /app in the container
+    ports:
+      - "3000:3000"
 
   nginx:
     image: nginx:latest

@@ -16,6 +16,16 @@ services:
     ports:
       - "5000:5000"
 
+  front:
+    build: ../unicon-front
+    environment:
+      - NODE_ENV=production
+    container_name: front
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../unicon-front:/app
+
   nginx:
     image: nginx
     container_name: nginx
