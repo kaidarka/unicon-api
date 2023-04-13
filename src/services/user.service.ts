@@ -32,7 +32,6 @@ const login = async (email: string, password: string): Promise<{ refreshToken: s
   if (user == null) {
     throw new Error('Пользователь не найден');
   }
-  console.log(password, user.password);
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
     throw new Error('Неверный пароль');
