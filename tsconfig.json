@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ES2018",
+    "noImplicitReturns": false,
+    "target": "es6",
     "module": "commonjs",
     "outDir": "./dist",
     "strict": true,
@@ -12,5 +13,5 @@
   ],
   "exclude": [
     "node_modules"
-  ]
+  ],
 }
