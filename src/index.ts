@@ -8,25 +8,25 @@ import userRoutes from './routes/user.routes';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 4000;
+const port = process.env.PORT ?? 4000;
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/unicon";
+const MONGO_URI = process.env.MONGO_URI ?? 'mongodb://localhost:27017/unicon';
 mongoose.connect(MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 } as any)
-    .then(() => console.log('MongoDB connected...'))
-    .catch(err => console.log(err));
+  .then(() => { console.log('MongoDB connected...'); })
+  .catch(err => { console.log(err); });
 
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors());
 
 app.get('/api', (req, res) => {
-    res.send('Hello brooooo!');
+  res.send('Hello brooooo!');
 });
-app.use('/api/users', userRoutes);
+app.use('/api', userRoutes);
 
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}.`);
+  console.log(`Server is running on port ${port}.`);
 });

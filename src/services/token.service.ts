@@ -1,79 +1,80 @@
-import jwt, {JwtPayload} from "jsonwebtoken";
-import TokenSchema from "../models/token.model";
+import jwt, { type JwtPayload } from 'jsonwebtoken';
+import TokenSchema from '../models/token.model';
 
 export interface TokenPayload {
-    email: string;
-    _id: string;
+  email: string
+  _id: string
 }
 
-const generateTokens = (payload: { email: string, _id: string }) => {
-    const accessToken = jwt.sign(payload,
-        // TODO rewrite secret
-        "secret",
-        {
-            expiresIn: "30m",
-        }
-    );
-    const refreshToken = jwt.sign(payload,
-        // TODO rewrite secret
-        "secret",
-        {
-            expiresIn: "30d",
-        }
-    );
-    return {
-        refreshToken,
-        accessToken
-    };
+const generateTokens = (payload: { email: string, _id: string }): { refreshToken: string
+  accessToken: string } => {
+  const accessToken = jwt.sign(payload,
+    process.env.JWT_SECRET ?? 'mysecret',
+    {
+      expiresIn: '30m'
+    }
+  );
+  const refreshToken = jwt.sign(payload,
+    process.env.JWT_SECRET ?? 'mysecret',
+    {
+      expiresIn: '30d'
+    }
+  );
+  return {
+    refreshToken,
+    accessToken
+  };
 };
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const saveToken = async (userId: string, refreshToken: string) => {
-    const tokenData = await TokenSchema.findOne({user: userId});
-    if (tokenData) {
-        tokenData.refreshToken = refreshToken;
-        return tokenData.save();
-    }
-    return await TokenSchema.create({user: userId, refreshToken});
+  const tokenData = await TokenSchema.findOne({ user: userId });
+  if (tokenData != null) {
+    tokenData.refreshToken = refreshToken;
+    return await tokenData.save();
+  }
+  return await TokenSchema.create({ user: userId, refreshToken });
 };
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const removeToken = async (refreshToken: string) => {
-    return TokenSchema.deleteOne({refreshToken});
+  return await TokenSchema.deleteOne({ refreshToken });
 };
 
-const validateAccessToken = (token: string) => {
-    try {
-        // TODO rewrite secret
-        return jwt.verify(token, "secret");
-    } catch (err) {
-        return null;
+const validateAccessToken = (token: string): JwtPayload | null | string => {
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET ?? 'mysecret');
+  } catch (err) {
+    return null;
+  }
+};
+
+const validateRefreshToken = (token: string): { _id: string, email: string } | null | Error => {
+  try {
+    const payload: JwtPayload | string = jwt.verify(token, process.env.JWT_SECRET ?? 'mysecret');
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+    if (typeof payload !== 'object' || !payload.email || !payload._id) {
+      return new Error('Invalid token payload');
     }
+    return {
+      email: payload.email,
+      _id: payload._id
+    };
+  } catch (err) {
+    return null;
+  }
 };
 
-const validateRefreshToken = (token: string) => {
-    try {
-        // TODO rewrite secret
-        const payload: JwtPayload | string = jwt.verify(token, "secret");
-        if (typeof payload !== "object" || !payload.email || !payload._id) {
-            throw new Error("Invalid token payload");
-        }
-        return {
-            email: payload.email,
-            _id: payload._id
-        }
-    } catch (err) {
-        return null;
-    }
-};
-
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const findToken = async (refreshToken: string) => {
-    return TokenSchema.findOne({refreshToken});
+  return await TokenSchema.findOne({ refreshToken });
 };
 
 export default {
-    saveToken,
-    generateTokens,
-    removeToken,
-    validateAccessToken,
-    validateRefreshToken,
-    findToken,
+  saveToken,
+  generateTokens,
+  removeToken,
+  validateAccessToken,
+  validateRefreshToken,
+  findToken
 };
